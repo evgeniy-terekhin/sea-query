@@ -1,4 +1,5 @@
 use super::*;
+use crate::extension::sqlite::SqliteBinOper;
 
 impl QueryBuilder for SqliteQueryBuilder {
     fn prepare_select_lock(&self, _select_lock: &LockClause, _sql: &mut dyn SqlWriter) {
@@ -32,6 +33,22 @@ impl QueryBuilder for SqliteQueryBuilder {
             UnionType::All => write!(sql, " UNION ALL ").unwrap(),
         }
         self.prepare_select_statement(select_statement, sql);
+    }
+
+    fn prepare_bin_oper(&self, bin_oper: &BinOper, sql: &mut dyn SqlWriter) {
+        match bin_oper {
+            BinOper::SqliteOperator(bin_oper) => write!(
+                sql,
+                "{}",
+                match bin_oper {
+                    SqliteBinOper::Match => "MATCH",
+                    SqliteBinOper::GetJsonField => "->",
+                    SqliteBinOper::CastJsonField => "->>",
+                }
+            )
+            .unwrap(),
+            _ => self.prepare_bin_oper_common(bin_oper, sql),
+        }
     }
 
     fn prepare_query_statement(&self, query: &SubQueryStatement, sql: &mut dyn SqlWriter) {
